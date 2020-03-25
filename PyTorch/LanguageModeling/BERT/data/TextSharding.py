@@ -41,6 +41,8 @@ class Sharding:
 
         self.init_output_files()
 
+        self.training_counts = defaultdict(int)
+        self.test_counts = defaultdict(int)
 
     # Remember, the input files contain one article per line (the whitespace check is to skip extraneous blank lines)
     def load_articles(self):
@@ -139,7 +141,6 @@ class Sharding:
         result = 0
         for article_id in shard:
             result += len(self.sentences[article_id])
-
         return result
 
 
@@ -171,6 +172,7 @@ class Sharding:
             current_article_id = sentence_counts[max_sentences][-1]
             sentence_counts[max_sentences].pop(-1)
             self.output_training_files[file].append(current_article_id)
+            self.training_counts[file] += len(self.sentences[current_article_id])
             consumed_article_set.add(current_article_id)
             unused_article_set.remove(current_article_id)
 
@@ -186,6 +188,7 @@ class Sharding:
             current_article_id = sentence_counts[max_sentences][-1]
             sentence_counts[max_sentences].pop(-1)
             self.output_test_files[file].append(current_article_id)
+            self.test_counts[file] += len(self.sentences[current_article_id])
             consumed_article_set.add(current_article_id)
             unused_article_set.remove(current_article_id)
 
@@ -197,14 +200,8 @@ class Sharding:
                 nominal_sentences_per_test_shard = len(self.sentences[current_article_id])
                 print('Warning: A single article contains more than the nominal number of sentences per test shard.')
 
-        training_counts = []
-        test_counts = []
-
-        for shard in self.output_training_files:
-            training_counts.append(self.get_sentences_per_shard(self.output_training_files[shard]))
-
-        for shard in self.output_test_files:
-            test_counts.append(self.get_sentences_per_shard(self.output_test_files[shard]))
+        training_counts = list(self.training_counts.values())
+        test_counts = list(self.test_counts.values())
 
         training_median = statistics.median(training_counts)
         test_median = statistics.median(test_counts)
@@ -231,6 +228,7 @@ class Sharding:
                 sentence_counts[nominal_next_article_size].pop(-1)
 
                 self.output_training_files[file].append(current_article_id)
+                self.training_counts[file] += len(self.sentences[current_article_id])
                 consumed_article_set.add(current_article_id)
                 unused_article_set.remove(current_article_id)
 
@@ -251,6 +249,7 @@ class Sharding:
                 sentence_counts[nominal_next_article_size].pop(-1)
 
                 self.output_test_files[file].append(current_article_id)
+                self.test_counts[file] += len(self.sentences[current_article_id])
                 consumed_article_set.add(current_article_id)
                 unused_article_set.remove(current_article_id)
 
@@ -267,13 +266,8 @@ class Sharding:
                 nominal_sentences_per_training_shard += 1
                 # nominal_sentences_per_test_shard += 1
 
-            training_counts = []
-            test_counts = []
-            for shard in self.output_training_files:
-                training_counts.append(self.get_sentences_per_shard(self.output_training_files[shard]))
-
-            for shard in self.output_test_files:
-                test_counts.append(self.get_sentences_per_shard(self.output_test_files[shard]))
+            training_counts = list(self.training_counts.values())
+            test_counts = list(self.test_counts.values())
 
             training_median = statistics.median(training_counts)
             test_median = statistics.median(test_counts)
