@@ -14,7 +14,11 @@
 import torch
 import torch.distributed as dist
 
+from herring.torch.parallel import DistributedDataParallel as DDP
+import herring.torch as herring
+
 def get_rank():
+    return herring.get_rank()
     if not dist.is_available():
         return 0
     if not dist.is_initialized():
@@ -22,6 +26,7 @@ def get_rank():
     return dist.get_rank()
 
 def get_world_size():
+    return herring.get_world_size()
     if not dist.is_available():
         return 1
     if not dist.is_initialized():
